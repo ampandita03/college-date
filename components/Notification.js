@@ -7,11 +7,13 @@ import {
 } from "react-native";
 import React from "react";
 import { useNavigation } from "@react-navigation/native";
-
+import { useRoute } from "@react-navigation/native";
 const Notification = () => {
+  const route =useRoute();
+  const { accessToken } = route.params;
   const navigation = useNavigation();
   const handleSkip = () => {
-    navigation.navigate("Card");
+    navigation.navigate("Card",{ accessToken });
   };
   return (
     <SafeAreaView className="flex-1">

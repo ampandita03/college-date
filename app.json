@@ -19,16 +19,28 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/Logo.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.a_pandita03.collegedate"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/Logo.png"
     },
-    "plugins": ["expo-router", "expo-asset"],
+    "plugins": [
+      "expo-router",
+      "expo-asset"
+    ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "0ae012d3-9b76-41c3-a98e-5b4afe77c88c"
+      }
     }
   }
 }

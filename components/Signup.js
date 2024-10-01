@@ -69,9 +69,9 @@ const Signup = () => {
       />
         </TouchableOpacity>
 
-        <TouchableOpacity className="bg-white h-10 w-44 self-center  border-0.5 rounded-lg justify-center border-black  flex-row ">
+        <TouchableOpacity className="bg-white h-10 w-44 self-center  border rounded-lg justify-center border-black  flex-row ">
           <Image
-            className="self-center h-5 w-5"
+            className="self-center h-5 w-5 mr-1"
             source={require("../assets/images/facebook.png")}
           />
           <Text className="justify-center self-center font-semibold">

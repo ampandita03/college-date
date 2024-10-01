@@ -1,8 +1,12 @@
 import React from 'react';
 import {View,Text,SafeAreaView,Image,TouchableOpacity, TextInput} from 'react-native';
-
+import { useNavigation } from '@react-navigation/native';
 
 const Login=()=>{
+  const navigation=useNavigation();
+  const handleSignIn=()=>{
+    navigation.navigate('TabNavigator');
+  }
     return(
         <SafeAreaView className="flex-1 bg-white">
         <View className="max-w-lg h-60 justify-center">
@@ -19,7 +23,7 @@ const Login=()=>{
         <TextInput placeholder='Email' placeholderTextColor="gray" className=" top-6 h-14 w-80 self-center border rounded-md pl-4"/>
 
         <TextInput placeholder='Password' placeholderTextColor="gray" secureTextEntry={true} className=" top-12 h-14 w-80 self-center border rounded-md pl-4"/>
-        <TouchableOpacity className="top-20 bg-app-color h-14 w-60 self-center justify-center rounded-lg">
+        <TouchableOpacity className="top-20 bg-app-color h-14 w-60 self-center justify-center rounded-lg" onPress={handleSignIn}>
             <Text className="text-lg text-white self-center font-medium">Sign In</Text>
         </TouchableOpacity>
         </View>

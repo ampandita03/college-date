@@ -6,11 +6,12 @@ import {
   TouchableOpacity,
   Image,
   TextInput,
-  Modal,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator"; 
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { useNavigation } from "@react-navigation/native";
@@ -19,9 +20,9 @@ import Autocomplete from "react-native-autocomplete-input";
 
 const Profile = () => {
   const route = useRoute();
-  const { username } = route.params;
+  const { accessToken } = route.params;
   const navigation = useNavigation();
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [dob, setDob] = useState("");
@@ -29,6 +30,8 @@ const Profile = () => {
   const [filteredColleges, setFilteredColleges] = useState([]);
   const [selectedCollege, setSelectedCollege] = useState("");
   const [isDatePickerVisible, setIsDatePickerVisible] = useState(false);
+  const [collegeId, setCollegeId] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const showDatePicker = () => {
     setIsDatePickerVisible(true);
@@ -42,23 +45,78 @@ const Profile = () => {
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const year = date.getFullYear();
-
     const formattedDate = `${day}-${month}-${year}`;
-    formattedDate.toString();
     setDob(formattedDate);
     setIsDatePickerVisible(false);
   };
 
-  const fetchColleges = async (search) => {
-    const response = await fetch(
-      `http://3.6.112.15:8081/public/colleges?name=${search}`,
-      {
-        method: "GET",
+  const uploadBasicDetails = async () => {
+    if (
+      profile.trim() === "" ||
+      firstName.trim() === "" ||
+      lastName.trim() === "" ||
+      selectedCollege.trim() === "" ||
+      dob.trim() === ""
+    ) {
+      Alert.alert("Enter all the required fields!");
+      return;
+    }
+  
+    console.warn("DATA UPLOADING..");
+    
+    try {
+      setIsLoading(true);
+      const response = await fetch(
+        "http://3.6.112.15:8081/newUser/addBasicDetails",
+        {
+          method: "POST",
+          body: JSON.stringify({
+            firstName: firstName,
+            lastName: lastName,
+            dob: dob,
+            collegeId: collegeId,
+            collegeName: selectedCollege,
+            image: profile,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      const result = await response.text();
+      console.warn(result);
+  
+      if (result==="0") { 
+        navigation.navigate("Gender", { accessToken });
+        Alert.alert("Profile Updated!");
+        setIsLoading(false);
       }
-    );
+    
+      else{
+        Alert.alert("Enter all the required fields!");
+        setIsLoading(false);
+      }}
+     catch (error) {
+      console.error("Upload failed", error);
+      Alert.alert("Upload failed", error.message);
+      setIsLoading(false);
+    }
+  };
 
-    const data = await response.json();
-    setFilteredColleges(data.slice(0, 10));
+  const fetchColleges = async (search) => {
+    try {
+      const response = await fetch(
+        `http://3.6.112.15:8081/public/colleges?name=${search}`,
+        {
+          method: "GET",
+        }
+      );
+      const data = await response.json();
+      setFilteredColleges(data.slice(0, 10));
+    } catch (error) {
+      console.error("Failed to fetch colleges", error);
+    }
   };
 
   useEffect(() => {
@@ -73,29 +131,12 @@ const Profile = () => {
     setSelectedCollege(college.collegeName);
     setQuery(college.collegeName);
     setFilteredColleges([]);
-  };
-
-  const handleConfirm = () => {
-
-    if(firstName&&lastName&&selectedCollege&&dob){
-      navigation.navigate("Gender", {
-        username,
-        firstName,
-        lastName,
-        dob,
-        selectedCollege,
-      });
-    }
-    else{
-      Alert.alert("Fill all the required fields.")
-    }
-  
-    console.log(username, firstName, lastName, dob, selectedCollege);
+    setCollegeId(college.id);
   };
 
   const pickImage = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (permission.granted === false) {
+    if (!permission.granted) {
       Alert.alert("Permission to access the media library is required!");
       return;
     }
@@ -105,15 +146,29 @@ const Profile = () => {
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
+      base64: true,
     });
 
     if (!pickedImage.canceled) {
-      setProfile(pickedImage.assets[0].uri);
+      const compressedImage = await compressImage(pickedImage.assets[0]);
+      setProfile(compressedImage);
     }
   };
 
+  const compressImage = async (image, format) => {
+    const manipulatedImage = await ImageManipulator.manipulateAsync(
+      image.uri,
+      [{ resize: { width: 300 } }],
+      {
+        compress: 0.8,
+        format: format === 'png' ? ImageManipulator.SaveFormat.PNG : ImageManipulator.SaveFormat.JPEG, 
+        base64: true,
+      }
+    );
+    return manipulatedImage.base64; 
+  };
   return (
-    <SafeAreaView className="flex-1">
+    <SafeAreaView className="flex-1 top-10">
       <View
         className="h-28 justify-center relative -mt-10"
         style={{ zIndex: 1 }}
@@ -125,9 +180,9 @@ const Profile = () => {
 
       <View className="items-center relative" style={{ zIndex: 1 }}>
         <TouchableOpacity onPress={pickImage}>
-          {profile ? (
+          {profile ? (  
             <Image
-              source={{ uri: profile }}
+              source={{ uri: `data:image/png;base64,${profile}` }}
               className="h-32 w-32 rounded-full"
             />
           ) : (
@@ -200,7 +255,7 @@ const Profile = () => {
 
       <View className="relative top-24 w-80 justify-center self-center">
         <TouchableOpacity
-          className="h-14 bg-calender rounded-lg justify-center flex-row items-center"
+          className="h-14 bg-calender rounded-lg justify-center flex-row items-center z-20"
           onPress={showDatePicker}
         >
           <AntDesign name="calendar" size={24} color="#E94057" />
@@ -217,47 +272,32 @@ const Profile = () => {
           mode="date"
           onConfirm={handleDate}
           onCancel={hideDatePicker}
-        ></DateTimePickerModal>
+        />
       </View>
 
-      <View className="relative">
+      <View className="relative top-36 w-80 justify-center self-center">
         <TouchableOpacity
-          className="top-32 bg-app-color h-14 w-80 self-center justify-center rounded-lg"
-          onPress={handleConfirm}
-          style={{ zIndex: 1 }}
+          className="h-14 bg-app-color rounded-lg justify-center"
+          onPress={uploadBasicDetails}
         >
-          <Text className="text-lg text-white self-center font-medium">
-            Confirm
-          </Text>
+          {isLoading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text className="text-white text-xl font-semibold text-center">
+              Continue
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 };
 
+export default Profile;
+
 const styles = StyleSheet.create({
   inputContainerStyle: {
     borderWidth: 0,
-  },
-  modalBackground: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-  },
-  modalContainer: {
-    width: 350,
-    backgroundColor: "white",
-    borderRadius: 10,
-    padding: 20,
-    alignItems: "center",
-  },
-  button: {
-    marginTop: 20,
-    padding: 10,
-    backgroundColor: "#ddd",
-    borderRadius: 5,
+    backgroundColor: "transparent",
   },
 });
-
-export default Profile;

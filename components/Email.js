@@ -30,11 +30,11 @@ const Email = () => {
       const result = await fetchData.text();
       console.log(result);
 
-      if (result) {
+      if (result!="0") {
             navigation.navigate("Otp", { email });
       } else {
         setisLoading(false);
-        Alert.alert("Invalid Email ID!");
+        Alert.alert("Email already taken!");
       }
     } catch (error) {
       console.error("Error:", error);

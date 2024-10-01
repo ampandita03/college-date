@@ -9,12 +9,39 @@ import {
 import React, { useEffect, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
+
 const Interest = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const {userName,firstName,lastName,dob,collegeName,isGender}= route.params;
+  const { accessToken } = route.params;
+
   const [interest, setInterest] = useState([]);
   const [selectedInterest, setSelectedInterest] = useState([]);
+
+  const handleInterests = async () => {
+    try {
+      const response = await fetch("http://3.6.112.15:8081/newUser/addInterests", {
+        method: "POST",
+        body: JSON.stringify({ interests: selectedInterest.map((i) => i.name) }), 
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      const data = await response.text();
+      console.log(data);
+
+      if (data === "0") {
+        console.warn("Interests uploaded successfully");
+        navigation.navigate("Notification", { accessToken });
+      } else {
+        console.warn("Something went wrong!");
+      }
+    } catch (error) {
+      console.warn(error);
+    }
+  };
 
   useEffect(() => {
     const fetchInterest = async () => {
@@ -37,16 +64,10 @@ const Interest = () => {
     }
   };
 
-  const handleConfirm = () => {
-
-    navigation.navigate("Friend",{userName,firstName,lastName,dob,collegeName,isGender,selectedInterest});
-    console.log(userName,firstName,lastName,dob,collegeName,isGender,selectedInterest);
-  };
-
   const handleSkip = () => {
-
-    navigation.navigate("Friend");
+    navigation.navigate("Notification", { accessToken });
   };
+
   return (
     <SafeAreaView className="flex-1">
       <View className="h-20 justify-center items-end">
@@ -91,7 +112,7 @@ const Interest = () => {
 
       <TouchableOpacity
         className="mt-16 -top-10 bg-app-color h-14 w-80 self-center justify-center rounded-lg"
-        onPress={handleConfirm}
+        onPress={handleInterests}
       >
         <Text className="text-lg text-white self-center font-medium">
           Confirm

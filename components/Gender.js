@@ -1,18 +1,38 @@
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, Alert } from "react-native";
 import React, { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { useRoute } from "@react-navigation/native";
 const Gender = () => {
   const route = useRoute();
-  const { userName, firstName, lastName, dob ,collegeName } = route.params;
+  const { accessToken } = route.params;
     const navigation = useNavigation();
-  const [isGender, setisGender] = useState(null);
-    const handleNavigation=()=>{
-        console.log(isGender)
-        navigation.navigate('Interest',{ userName, firstName, lastName, dob ,collegeName,isGender });
-        console.log(userName, firstName, lastName, dob ,collegeName,isGender);
+  const [isGender, setisGender] = useState("0");
+  const genderApi=async()=>{
+
+    try{
+    const response = await fetch("http://3.6.112.15:8081/newUser/addGender",{
+      method:"POST",
+      body : isGender,
+      headers:{
+        'Content-Type':'application/text',
+        Authorization : `Bearer ${accessToken}`
+      }
+    });
+    const result = await response.text();
+    console.warn(result);
+    if(result==='0' || result ==="1"){
+      console.warn("Navigating to Interest screen")
+      navigation.navigate('Interest',{ accessToken });
+    }else{
+      Alert.alert("Something went wrong!");
     }
+  }
+  catch(error){
+    console.warn(error);
+  }
+  }
+
   return (
     <SafeAreaView className="flex-1">
       <View className="h-28 justify-center  relative ml-3">
@@ -24,13 +44,13 @@ const Gender = () => {
       <TouchableOpacity
         className={`relative top-6 rounded-lg border-0.5 h-16
        w-80 self-center p-5 justify-center ${
-         isGender === "Male" ? "bg-app-color border-0" : ""
+         isGender === "0" ? "bg-app-color border-0" : ""
        }`}
-        onPress={() => setisGender("Male")}
+        onPress={() => setisGender("0")}
       >
         <Text
           className={`font-medium text-base ${
-            isGender === "Male" ? "text-white" : "text-black"
+            isGender === "0" ? "text-white" : "text-black"
           }`}
         >
           Male
@@ -40,13 +60,13 @@ const Gender = () => {
       <TouchableOpacity
         className={`relative top-12 rounded-lg border-0.5 h-16
        w-80 self-center p-5 justify-center ${
-         isGender === "Female" ? "bg-app-color border-0" : ""
+         isGender === "1" ? "bg-app-color border-0" : ""
        } `}
-        onPress={() => setisGender("Female")}
+        onPress={() => setisGender("1")}
       >
         <Text
           className={`font-medium text-base ${
-            isGender === "Female" ? "text-white" : "text-black"
+            isGender === "1" ? "text-white" : "text-black"
           }`}
         >
           Female
@@ -54,7 +74,7 @@ const Gender = () => {
       </TouchableOpacity>
 
       <View className="absolute bottom-32  self-center">
-        <TouchableOpacity className=" top-16 bg-app-color h-14 w-80 self-center justify-center rounded-lg" onPress={handleNavigation}>
+        <TouchableOpacity className=" top-16 bg-app-color h-14 w-80 self-center justify-center rounded-lg" onPress={genderApi}>
           <Text className="text-lg text-white self-center font-medium">
             Continue
           </Text>
